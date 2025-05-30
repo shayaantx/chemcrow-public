@@ -1,16 +1,12 @@
 from typing import Any, Dict, List, Optional
 
 from langchain.callbacks.streamlit.streamlit_callback_handler import (
-    CHECKMARK_EMOJI,
-    EXCEPTION_EMOJI,
-    THINKING_EMOJI,
     LLMThought,
     LLMThoughtLabeler,
     LLMThoughtState,
     StreamlitCallbackHandler,
     ToolRecord,
 )
-from langchain_core.schema import AgentAction, AgentFinish, LLMResult
 from streamlit.delta_generator import DeltaGenerator
 
 from chemcrow.utils import is_smiles
@@ -170,7 +166,7 @@ class StreamlitCallbackHandlerChem(StreamlitCallbackHandler):
         self._complete_current_thought()
 
     def on_agent_finish(
-        self, finish: AgentFinish, color: Optional[str] = None, **kwargs: Any
+        self, finish, color: Optional[str] = None, **kwargs: Any
     ) -> None:
         if self._current_thought is not None:
             self._current_thought.complete(

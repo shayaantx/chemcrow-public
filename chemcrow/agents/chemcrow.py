@@ -1,6 +1,7 @@
 from typing import Optional
 
 import langchain
+from langchain_ollama import OllamaLLM
 from dotenv import load_dotenv
 from langchain import PromptTemplate, chains
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
@@ -11,7 +12,7 @@ from .prompts import FORMAT_INSTRUCTIONS, QUESTION_PROMPT, REPHRASE_TEMPLATE, SU
 from .tools import make_tools
 
 
-def _make_llm(model, temp, api_key, streaming: bool = False):
+def _make_llm(model, temp, api_key, streaming: bool = False, ollama_url = ""):
     if model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
         llm = langchain.chat_models.ChatOpenAI(
             temperature=temp,
@@ -28,6 +29,15 @@ def _make_llm(model, temp, api_key, streaming: bool = False):
             streaming=streaming,
             callbacks=[StreamingStdOutCallbackHandler()],
             openai_api_key=api_key,
+        )
+    elif not (not ollama_url):
+        llm = OllamaLLM(
+            temperature=temp,
+            model_name=model,
+            streaming=streaming,
+            base_url=ollama_url,
+            model=model,
+            callbacks=[StreamingStdOutCallbackHandler()],
         )
     else:
         raise ValueError(f"Invalid model name: {model}")
@@ -47,18 +57,19 @@ class ChemCrow:
         openai_api_key: Optional[str] = None,
         api_keys: dict = {},
         local_rxn: bool = False,
+        ollama_url: str = "",
     ):
         """Initialize ChemCrow agent."""
 
         load_dotenv()
         try:
-            self.llm = _make_llm(model, temp, openai_api_key, streaming)
+            self.llm = _make_llm(model, temp, openai_api_key, streaming, ollama_url)
         except ValidationError:
             raise ValueError("Invalid OpenAI API key")
 
         if tools is None:
             api_keys["OPENAI_API_KEY"] = openai_api_key
-            tools_llm = _make_llm(tools_model, temp, openai_api_key, streaming)
+            tools_llm = _make_llm(tools_model, temp, openai_api_key, streaming, ollama_url)
             tools = make_tools(tools_llm, api_keys=api_keys, local_rxn=local_rxn, verbose=verbose)
 
         # Initialize agent
